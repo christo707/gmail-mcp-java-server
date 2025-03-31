@@ -1,4 +1,4 @@
-package com.christo.agentic.ai.gmail_mcp_java_server;
+package com.christo.agentic.ai;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
