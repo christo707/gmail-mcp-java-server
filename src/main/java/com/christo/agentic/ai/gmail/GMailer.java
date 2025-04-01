@@ -1,35 +1,21 @@
-package com.christo.agentic.ai;
+package com.christo.agentic.ai.gmail;
 
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.gmail.Gmail;
-import com.google.api.services.gmail.GmailScopes;
-import com.google.api.services.gmail.model.Label;
-import com.google.api.services.gmail.model.ListLabelsResponse;
 import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import com.google.api.services.gmail.model.ModifyMessageRequest;
 import com.google.api.services.gmail.model.Profile;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -43,63 +29,13 @@ import java.util.Optional;
 import java.util.Properties;
 
 @Slf4j
+@RequiredArgsConstructor
+@Service
 public class GMailer {
-
-    private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-
-    private static final String APPLICATION_NAME = "GmailMCPMailer";
-
-    private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_MODIFY);
-
-    DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
-
-    private final String credentialsPath;
-
-    private final String tokensPath;
-
-    private final String userEmail;
+    
+    private final DateFormat simpleDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
 
     private final Gmail gmail;
-
-
-    GMailer(final String credentialsPath, final String tokensPath) {
-        this.credentialsPath = credentialsPath;
-        this.tokensPath = tokensPath;
-        this.gmail = getGmailService();
-        this.userEmail = getUserEmail();
-    }
-
-    @SneakyThrows
-    public String getUserEmail() {
-        Profile profile = gmail.users().getProfile("me").execute();
-        return profile.getEmailAddress();
-    }
-
-    @SneakyThrows
-    private Gmail getGmailService() {
-        final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-        return new Gmail.Builder(httpTransport, JSON_FACTORY, getCredentials(httpTransport)).setApplicationName(APPLICATION_NAME).build();
-    }
-
-    private Credential getCredentials(final NetHttpTransport httpTransport) throws IOException {
-
-        InputStream in = GMailer.class.getResourceAsStream(credentialsPath);
-        if (in == null) {
-            throw new FileNotFoundException("Resource not found: " + credentialsPath);
-        }
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES).setDataStoreFactory(new FileDataStoreFactory(new java.io.File(tokensPath))).setAccessType("offline").build();
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-        return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-    }
-
-    @SneakyThrows
-    public List<String> getSelfLabels() {
-        String user = "me";
-        ListLabelsResponse listResponse = gmail.users().labels().list(user).execute();
-        return listResponse.getLabels().stream().map(Label::getName).toList();
-    }
 
     public List<Message> getUnreadMessages() throws IOException {
         String query = "in:inbox is:unread category:primary";
@@ -138,7 +74,7 @@ public class GMailer {
 
     private Date parseDate(String date) {
         try {
-            return df.parse(date);
+            return simpleDateFormat.parse(date);
         } catch (ParseException e) {
             log.error("Error parsing date", e);
             return null;
@@ -171,10 +107,16 @@ public class GMailer {
 
     @SneakyThrows
     public String sendEmail(String recipientId, String subject, String messageText) {
-        Message message = createMessageWithEmail(recipientId, userEmail, subject, messageText);
+        Message message = createMessageWithEmail(recipientId, getUserEmail(), subject, messageText);
         Message sendMessage = gmail.users().messages().send("me", message).execute();
         log.info("Message sent: {}", sendMessage.getId());
-        return String.format("{\"status\": \"success\", \"message_id\": \"%s\"}", sendMessage.getId());
+        return String.format("Message successfully sent with id: %s}", sendMessage.getId());
+    }
+
+    @SneakyThrows
+    private String getUserEmail() {
+        Profile profile = gmail.users().getProfile("me").execute();
+        return profile.getEmailAddress();
     }
 
     @SneakyThrows

@@ -1,4 +1,4 @@
-package com.christo.agentic.ai;
+package com.christo.agentic.ai.gmail;
 
 import lombok.Builder;
 import lombok.Data;

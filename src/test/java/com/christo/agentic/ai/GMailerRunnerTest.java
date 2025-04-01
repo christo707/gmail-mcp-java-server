@@ -1,22 +1,23 @@
 package com.christo.agentic.ai;
 
+import com.christo.agentic.ai.gmail.GMailer;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 
 
 class GMailerRunnerTest {
 
-    private final String tokensDirectoryPath = "src/test/resources/tokens";
+    private static GMailer gMailer;
 
-    private final String credentialsPath = "/credentials.json";
+//    static  {
+//        String tokensDirectoryPath = "src/test/resources/tokens";
+//        String credentialsPath = "/credentials.json";
+//        GmailConfig gmail = new GmailConfig();
+//        gmail.setCredentialsPath(credentialsPath);
+//        gmail.setTokensPath(tokensDirectoryPath);
+//        gMailer = new GMailer(gmail);
+//    }
 
-    private final GMailer gMailer = new GMailer(credentialsPath, tokensDirectoryPath);
-
-    @Test
-    @SneakyThrows
-    void testGetLabels() {
-        System.out.println(gMailer.getSelfLabels());
-    }
 
     @Test
     @SneakyThrows
@@ -28,12 +29,6 @@ class GMailerRunnerTest {
     @SneakyThrows
     void testReadMessage() {
         System.out.println(gMailer.readEmail("195eba182adc829c"));
-    }
-
-    @Test
-    @SneakyThrows
-    void testGetEmailAddress() {
-        System.out.println(gMailer.getUserEmail());
     }
 
     @Test
