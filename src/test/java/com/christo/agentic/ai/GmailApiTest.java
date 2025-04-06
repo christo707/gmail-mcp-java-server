@@ -12,7 +12,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(
 		classes = {Application.class})
-class ApplicationTest implements WithAssertions {
+class GmailApiTest implements WithAssertions {
 
 	@Autowired
 	private GMailer gMailer;
@@ -38,7 +38,7 @@ class ApplicationTest implements WithAssertions {
 	@Test
 	@SneakyThrows
 	void testmarkEmailAsRead() {
-		System.out.println(gMailer.markEmailAsRead("195eba182adc829c"));
+		System.out.println(gMailer.markEmailAsRead("195eba17fd90b67c"));
 	}
 
 	@Test

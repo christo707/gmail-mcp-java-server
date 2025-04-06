@@ -9,6 +9,7 @@ import com.google.api.services.gmail.model.Profile;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Service;
 
 import javax.mail.Session;
@@ -37,6 +38,7 @@ public class GMailer {
 
     private final Gmail gmail;
 
+    @Tool(description = "Get unread messages from Gmail")
     public List<Message> getUnreadMessages() throws IOException {
         String query = "in:inbox is:unread category:primary";
         ListMessagesResponse response = gmail.users().messages().list("me").setQ(query).execute();
@@ -54,6 +56,7 @@ public class GMailer {
     }
 
     @SneakyThrows
+    @Tool(description = "Read email by message ID")
     public Email readEmail(String messageId) {
         Message message = gmail.users().messages().get("me", messageId).execute();
         return Email.builder()
@@ -91,6 +94,7 @@ public class GMailer {
     }
 
     @SneakyThrows
+    @Tool(description = "Delete email by message ID")
     public String trashEmail(String emailId) {
         gmail.users().messages().trash("me", emailId).execute();
         log.info("Email moved to trash: {}", emailId);
@@ -98,16 +102,18 @@ public class GMailer {
     }
 
     @SneakyThrows
-    public String markEmailAsRead(String emailId) {
+    @Tool(description = "Mark email as read by message ID")
+    public String markEmailAsRead(String messageId) {
         ModifyMessageRequest mods = new ModifyMessageRequest().setRemoveLabelIds(Collections.singletonList("UNREAD"));
-        gmail.users().messages().modify("me", emailId, mods).execute();
-        log.info("Email marked as read: {}", emailId);
-        return String.format("Email with id %s marked as read.", emailId);
+        gmail.users().messages().modify("me", messageId, mods).execute();
+        log.info("Email marked as read: {}", messageId);
+        return String.format("Email with id %s marked as read.", messageId);
     }
 
     @SneakyThrows
-    public String sendEmail(String recipientId, String subject, String messageText) {
-        Message message = createMessageWithEmail(recipientId, getUserEmail(), subject, messageText);
+    @Tool(description = "Send email to recipient")
+    public String sendEmail(String recipientId, String subject, String body) {
+        Message message = createMessageWithEmail(recipientId, getUserEmail(), subject, body);
         Message sendMessage = gmail.users().messages().send("me", message).execute();
         log.info("Message sent: {}", sendMessage.getId());
         return String.format("Message successfully sent with id: %s}", sendMessage.getId());
